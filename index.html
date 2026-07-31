@@ -10,24 +10,105 @@
   <header class="app-header">
     <h1>CAT</h1>
     <p class="app-subtitle">Communication Assessment Tool</p>
+    <button id="open-settings-btn" class="btn btn-header" type="button">Settings</button>
   </header>
 
   <main id="app">
-    <section id="patient-section" class="app-section">
+
+    <section id="login-section" class="app-section">
+      <h2>Clinician Sign-in</h2>
+      <p class="placeholder-note">This is a lightweight name entry, not a secure login. It only labels reports with a clinician name for this session.</p>
+      <form id="login-form">
+        <label for="clinician-name-input">Your name</label>
+        <input id="clinician-name-input" type="text" required placeholder="e.g., Priya Nair" />
+        <button type="submit" class="btn btn-primary">Continue</button>
+      </form>
+    </section>
+
+    <section id="patient-section" class="app-section" hidden>
       <h2>Patients</h2>
-      <p class="placeholder-note">The patient list (select existing / start new) will appear here.</p>
+      <p id="signed-in-as" class="placeholder-note"></p>
+
+      <div id="patient-list"></div>
+
+      <h3>Start a new patient</h3>
+      <form id="new-patient-form">
+        <label for="patient-name-input">Patient name</label>
+        <input id="patient-name-input" type="text" required />
+
+        <label for="patient-dob-input">Date of birth</label>
+        <input id="patient-dob-input" type="date" />
+
+        <label for="caregiver-name-input">Caregiver name</label>
+        <input id="caregiver-name-input" type="text" />
+
+        <label for="caregiver-relationship-input">Caregiver relationship</label>
+        <input id="caregiver-relationship-input" type="text" placeholder="e.g., Mother, Father, Guardian" />
+
+        <label for="caregiver-email-input">Caregiver email</label>
+        <input id="caregiver-email-input" type="email" placeholder="for sharing the report later" />
+
+        <button type="submit" class="btn btn-primary">Create patient &amp; start assessment</button>
+      </form>
     </section>
 
     <section id="checklist-section" class="app-section" hidden>
-      <h2>Checklist</h2>
-      <p class="placeholder-note">The communication checklist will appear here.</p>
+      <h2 id="checklist-patient-name">Checklist</h2>
+      <div id="score-summary" class="score-summary"></div>
+      <div id="checklist-domains"></div>
+
+      <label for="clinician-notes-input">Clinician observations (optional, free text)</label>
+      <textarea id="clinician-notes-input" rows="4" placeholder="Optional notes to include in the AI-drafted narrative"></textarea>
+
+      <div class="button-row">
+        <button id="back-to-patients-btn" class="btn btn-secondary" type="button">Back to patients</button>
+        <button id="generate-report-btn" class="btn btn-primary" type="button">Generate report</button>
+      </div>
     </section>
 
     <section id="report-section" class="app-section" hidden>
       <h2>Report</h2>
-      <p class="placeholder-note">The clinical and caregiver report will appear here.</p>
+      <p class="ai-disclaimer">AI-generated draft — please review and edit before sharing or filing.</p>
+
+      <div id="report-scores-table"></div>
+
+      <div class="report-tabs">
+        <button id="clinical-tab-btn" class="tab-btn" type="button">Clinical Narrative</button>
+        <button id="caregiver-tab-btn" class="tab-btn" type="button">Caregiver-Friendly Report</button>
+      </div>
+
+      <p id="report-loading" class="placeholder-note" hidden>Generating report with Claude…</p>
+      <p id="report-error" class="error-note" hidden></p>
+
+      <div id="clinical-tab" class="tab-panel">
+        <textarea id="clinical-narrative-text" rows="16"></textarea>
+      </div>
+      <div id="caregiver-tab" class="tab-panel" hidden>
+        <textarea id="caregiver-narrative-text" rows="16"></textarea>
+      </div>
+
+      <div class="button-row no-print">
+        <button id="back-to-checklist-btn" class="btn btn-secondary" type="button">Back to checklist</button>
+        <button id="print-report-btn" class="btn btn-primary" type="button">Print / Save as PDF</button>
+      </div>
     </section>
+
   </main>
+
+  <div id="settings-panel" class="modal" hidden>
+    <div class="modal-content">
+      <h2>Settings</h2>
+      <label for="api-key-input">Anthropic API key</label>
+      <input id="api-key-input" type="password" placeholder="sk-ant-..." />
+      <p id="api-key-status" class="placeholder-note"></p>
+      <p class="placeholder-note">Stored only in this browser tab's session storage. Never saved to disk or sent anywhere except Anthropic's API.</p>
+      <div class="button-row">
+        <button id="clear-api-key-btn" class="btn btn-secondary" type="button">Clear</button>
+        <button id="save-api-key-btn" class="btn btn-primary" type="button">Save</button>
+        <button id="close-settings-btn" class="btn btn-secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="js/main.js"></script>
 </body>

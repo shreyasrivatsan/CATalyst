@@ -15,12 +15,17 @@ abstract.
 Work in progress — this README is updated as features are built.
 
 - [x] App skeleton
-- [ ] Patient list (select existing / start new)
-- [ ] Digital checklist
-- [ ] Automated scoring
-- [ ] AI clinical narrative
-- [ ] Caregiver-friendly report
-- [ ] Formatted report view
+- [x] Patient list (select existing / start new)
+- [x] Digital checklist
+- [x] Automated scoring
+- [x] AI clinical narrative
+- [x] Caregiver-friendly report
+- [x] Formatted report view
+
+All P0 items above have a working first pass. The checklist content is a
+generic, SCERTS-structure-inspired sample (not a licensed instrument) —
+see `js/data/checklist.js`. Teaching video links in `js/data/videoMap.js`
+were sourced via live search; spot-check them before a live demo.
 
 ## Running it locally
 
@@ -32,9 +37,13 @@ file system.
 
 ## API key
 
-AI features call the Anthropic API. The key is never hardcoded or
-committed to this repo. Configuration details will be added here once the
-key-entry panel is built.
+AI features call the Anthropic API directly from the browser. The key is
+never hardcoded or committed to this repo.
+
+To use the AI features: click **Settings** in the header, paste your
+Anthropic API key, and click **Save**. The key is held only in this
+browser tab's `sessionStorage` — it is never written to disk and is
+cleared when the tab closes or when you click **Clear**.
 
 ## Deployment
 
