@@ -62,3 +62,7 @@ cleared when the tab closes or when you click **Clear**.
 
 Deployed as a static site (Netlify). Deployment steps will be added here
 once the app is ready to publish.
+
+## License
+
+MIT — see `LICENSE`.
