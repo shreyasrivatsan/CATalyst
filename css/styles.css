@@ -1,0 +1,65 @@
+:root {
+  --color-bg: #f7f9fb;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-muted: #6b7280;
+  --color-primary: #2f7a78;
+  --color-primary-dark: #235c5a;
+  --color-border: #e2e8f0;
+  --radius: 8px;
+  --spacing: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.app-header {
+  background: var(--color-primary);
+  color: #ffffff;
+  padding: 1.5rem var(--spacing);
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+}
+
+.app-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--spacing);
+}
+
+.app-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: var(--spacing);
+}
+
+.app-section h2 {
+  margin-top: 0;
+}
+
+.placeholder-note {
+  color: var(--color-muted);
+  font-style: italic;
+}
