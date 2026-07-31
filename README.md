@@ -29,11 +29,24 @@ were sourced via live search; spot-check them before a live demo.
 
 ## Running it locally
 
-This is a plain static site — no build step, no install required.
+This is a plain static site — no build step, no install required. However,
+most browsers (Chrome especially) block the JavaScript modules this app
+uses when you open `index.html` directly from disk (`file://...`) — the
+page will load but buttons won't respond. Serve the folder instead:
 
-Open `index.html` directly in a browser, or serve the folder with any
-static file server if your browser blocks module scripts from the local
-file system.
+1. Open **Terminal** (Spotlight search → "Terminal").
+2. Move into the project folder:
+   ```
+   cd "/path/to/cat-prototype"
+   ```
+3. Start a local server (Python comes preinstalled on macOS):
+   ```
+   python3 -m http.server 8000
+   ```
+4. Open **http://localhost:8000** in your browser.
+
+Leave the Terminal window open while testing — it's what's serving the
+page. Stop it anytime with `Control+C` in that window.
 
 ## API key
 

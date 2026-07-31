@@ -288,29 +288,9 @@ textarea {
   background: var(--color-bg);
 }
 
-/* Settings modal */
-
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing);
-}
-
-.modal-content {
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  max-width: 420px;
-  width: 100%;
-}
-
 @media print {
   .app-header, #login-section, #patient-section, #checklist-section,
-  .report-tabs, .no-print, .ai-disclaimer {
+  #settings-section, .report-tabs, .no-print, .ai-disclaimer {
     display: none !important;
   }
 

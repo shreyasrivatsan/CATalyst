@@ -8,7 +8,7 @@ import { VIDEO_MAP } from "./data/videoMap.js";
 import { computeScores } from "./scoring.js";
 import { renderChecklist, renderScoreSummary } from "./checklistUI.js";
 import { renderScoresTable, initTabs } from "./report.js";
-import { initSettingsPanel } from "./settings.js";
+import { getApiKey, setApiKey, clearApiKey } from "./settings.js";
 import { generateClinicalNarrative } from "./ai/narrative.js";
 import { generateCaregiverReport } from "./ai/caregiverReport.js";
 
@@ -18,6 +18,10 @@ const checklist = DEFAULT_CHECKLIST;
 let currentPatientId = null;
 let currentAssessmentId = null;
 let itemScores = {};
+
+// Which section was visible before the user opened Settings, so "Back" can
+// return them there without disturbing in-progress work.
+let sectionBeforeSettings = "login-section";
 
 function showSection(sectionId) {
   document.querySelectorAll(".app-section").forEach((section) => {
@@ -222,12 +226,56 @@ async function generateReport() {
   }
 }
 
+// ---------- Settings ----------
+
+function initSettingsSection() {
+  const openBtn = document.getElementById("open-settings-btn");
+  const closeBtn = document.getElementById("close-settings-btn");
+  const saveBtn = document.getElementById("save-api-key-btn");
+  const clearBtn = document.getElementById("clear-api-key-btn");
+  const input = document.getElementById("api-key-input");
+  const statusEl = document.getElementById("api-key-status");
+
+  function refreshStatus() {
+    statusEl.textContent = getApiKey()
+      ? "An API key is set for this browser tab."
+      : "No API key set.";
+  }
+
+  openBtn.addEventListener("click", () => {
+    const currentSection = document.querySelector(".app-section:not([hidden])");
+    if (currentSection) sectionBeforeSettings = currentSection.id;
+
+    input.value = getApiKey();
+    refreshStatus();
+    showSection("settings-section");
+  });
+
+  closeBtn.addEventListener("click", () => {
+    showSection(sectionBeforeSettings);
+  });
+
+  saveBtn.addEventListener("click", () => {
+    const key = input.value.trim();
+    if (key) {
+      setApiKey(key);
+      refreshStatus();
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    clearApiKey();
+    input.value = "";
+    refreshStatus();
+  });
+}
+
 // ---------- Init ----------
 
 function init() {
   initLogin();
   initNewPatientForm();
-  initSettingsPanel();
+  initSettingsSection();
 
   document.getElementById("back-to-patients-btn").addEventListener("click", showPatientList);
   document.getElementById("back-to-checklist-btn").addEventListener("click", () => {

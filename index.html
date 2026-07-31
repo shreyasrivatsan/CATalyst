@@ -93,10 +93,7 @@
       </div>
     </section>
 
-  </main>
-
-  <div id="settings-panel" class="modal" hidden>
-    <div class="modal-content">
+    <section id="settings-section" class="app-section" hidden>
       <h2>Settings</h2>
       <label for="api-key-input">Anthropic API key</label>
       <input id="api-key-input" type="password" placeholder="sk-ant-..." />
@@ -105,10 +102,11 @@
       <div class="button-row">
         <button id="clear-api-key-btn" class="btn btn-secondary" type="button">Clear</button>
         <button id="save-api-key-btn" class="btn btn-primary" type="button">Save</button>
-        <button id="close-settings-btn" class="btn btn-secondary" type="button">Close</button>
+        <button id="close-settings-btn" class="btn btn-secondary" type="button">Back</button>
       </div>
-    </div>
-  </div>
+    </section>
+
+  </main>
 
   <script type="module" src="js/main.js"></script>
 </body>
