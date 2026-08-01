@@ -111,33 +111,39 @@ function renderLatestScores(patient, container) {
   container.appendChild(compositeEl);
 }
 
+// Lists every assessment for this patient (not just ones that already have
+// a generated report) so a clinician can always get to — or generate — a
+// report for any past assessment, even if generation previously failed or
+// was never run.
 function renderReportsList(patient, container, onViewReport) {
   container.textContent = "";
-  const reported = patient.assessments
-    .filter((a) => a.clinicalNarrative)
+  const assessments = patient.assessments
     .slice()
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  if (reported.length === 0) {
+  if (assessments.length === 0) {
     const note = document.createElement("p");
     note.className = "placeholder-note";
-    note.textContent = "No reports generated yet for this patient.";
+    note.textContent = "No assessments recorded yet.";
     container.appendChild(note);
     return;
   }
 
-  reported.forEach((assessment) => {
+  assessments.forEach((assessment) => {
+    const hasReport = Boolean(assessment.clinicalNarrative);
+
     const row = document.createElement("div");
     row.className = "patient-row";
 
     const info = document.createElement("div");
-    info.textContent = `${new Date(assessment.date).toLocaleDateString()} — Composite: ${formatComposite(assessment)}`;
+    const statusText = hasReport ? "Report available" : "No report generated yet";
+    info.textContent = `${new Date(assessment.date).toLocaleDateString()} — Composite: ${formatComposite(assessment)} — ${statusText}`;
     row.appendChild(info);
 
     const viewBtn = document.createElement("button");
     viewBtn.className = "btn btn-secondary";
     viewBtn.type = "button";
-    viewBtn.textContent = "View report";
+    viewBtn.textContent = hasReport ? "View report" : "Generate report";
     viewBtn.addEventListener("click", () => onViewReport(assessment));
     row.appendChild(viewBtn);
 

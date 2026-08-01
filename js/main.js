@@ -240,8 +240,65 @@ function persistAssessment() {
 
 // ---------- Report ----------
 
-async function generateReport() {
+// Shared by both a fresh "Generate report" (from the checklist) and a
+// "Regenerate report" (re-running AI generation for an assessment that
+// already exists, whether or not it already has a report). Persists the
+// clinical narrative to the assessment as soon as it succeeds — and the
+// caregiver narrative as soon as *it* succeeds — independently of each
+// other, so if one step fails (e.g. a network hiccup on the second, longer
+// call) whatever already completed isn't lost.
+async function runReportGeneration(assessment) {
   const loadingEl = document.getElementById("report-loading");
+  const errorEl = document.getElementById("report-error");
+  const clinicalTextarea = document.getElementById("clinical-narrative-text");
+  const caregiverTextarea = document.getElementById("caregiver-narrative-text");
+
+  errorEl.hidden = true;
+  errorEl.textContent = "";
+  loadingEl.hidden = false;
+  setRegenerateButtonEnabled(false);
+
+  const scores = assessment.scores;
+
+  try {
+    const clinicalNarrative = await generateClinicalNarrative(
+      checklist,
+      assessment.itemScores,
+      scores,
+      assessment.notes,
+      (textSoFar) => {
+        clinicalTextarea.value = textSoFar;
+      }
+    );
+
+    // Persist as soon as this succeeds — independent of the caregiver call
+    // below, so a failure there doesn't lose this narrative.
+    assessment.clinicalNarrative = clinicalNarrative;
+    assessment.reportGeneratedAt = new Date().toISOString();
+    saveAssessment(currentPatientId, assessment);
+    setRegenerateButtonLabel(true);
+
+    const caregiverReport = await generateCaregiverReport(
+      clinicalNarrative,
+      scores,
+      (textSoFar) => {
+        caregiverTextarea.value = textSoFar;
+      }
+    );
+
+    assessment.caregiverNarrative = caregiverReport;
+    saveAssessment(currentPatientId, assessment);
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = err.message || "Something went wrong generating the report.";
+    errorEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+    setRegenerateButtonEnabled(true);
+  }
+}
+
+async function generateReport() {
   const errorEl = document.getElementById("report-error");
   const saveStatusEl = document.getElementById("report-save-status");
   const clinicalTextarea = document.getElementById("clinical-narrative-text");
@@ -254,36 +311,42 @@ async function generateReport() {
   caregiverTextarea.value = "";
 
   const assessment = persistAssessment();
-  const scores = assessment.scores;
 
-  renderScoresTable(scores, document.getElementById("report-scores-table"));
+  renderScoresTable(assessment.scores, document.getElementById("report-scores-table"));
   reportBackTarget = "checklist-view";
   showShellView("report-view");
   initTabs();
+  setRegenerateButtonLabel(false);
 
-  loadingEl.hidden = false;
+  await runReportGeneration(assessment);
+}
 
-  try {
-    const notes = document.getElementById("clinician-notes-input").value;
-    const clinicalNarrative = await generateClinicalNarrative(checklist, itemScores, scores, notes);
-    clinicalTextarea.value = clinicalNarrative;
+// Re-runs AI generation for an assessment that was already scored earlier
+// (whether it never got a report the first time, e.g. because of a network
+// timeout, or the clinician just wants a fresh draft). Reuses the
+// assessment's already-saved itemScores/scores/notes rather than requiring
+// the clinician to redo the checklist.
+async function regenerateReport() {
+  if (!currentPatientId || !currentAssessmentId) return;
+  const patient = getPatient(currentPatientId);
+  const assessment = patient?.assessments.find((a) => a.id === currentAssessmentId);
+  if (!assessment) return;
 
-    const caregiverReport = await generateCaregiverReport(clinicalNarrative, scores);
-    caregiverTextarea.value = caregiverReport;
+  document.getElementById("report-save-status").hidden = true;
+  document.getElementById("clinical-narrative-text").value = "";
+  document.getElementById("caregiver-narrative-text").value = "";
 
-    // Persist the generated report onto the assessment record so it can be
-    // reopened later from Patient Detail or Clinical Reports.
-    assessment.clinicalNarrative = clinicalNarrative;
-    assessment.caregiverNarrative = caregiverReport;
-    assessment.reportGeneratedAt = new Date().toISOString();
-    saveAssessment(currentPatientId, assessment);
-  } catch (err) {
-    console.error(err);
-    errorEl.textContent = err.message || "Something went wrong generating the report.";
-    errorEl.hidden = false;
-  } finally {
-    loadingEl.hidden = true;
-  }
+  await runReportGeneration(assessment);
+}
+
+function setRegenerateButtonLabel(hasReport) {
+  document.getElementById("regenerate-report-btn").textContent = hasReport
+    ? "Regenerate report"
+    : "Generate report";
+}
+
+function setRegenerateButtonEnabled(enabled) {
+  document.getElementById("regenerate-report-btn").disabled = !enabled;
 }
 
 function showSavedReport(patient, assessment, backTarget) {
@@ -298,6 +361,7 @@ function showSavedReport(patient, assessment, backTarget) {
   renderScoresTable(assessment.scores, document.getElementById("report-scores-table"));
   document.getElementById("clinical-narrative-text").value = assessment.clinicalNarrative || "";
   document.getElementById("caregiver-narrative-text").value = assessment.caregiverNarrative || "";
+  setRegenerateButtonLabel(!!assessment.clinicalNarrative);
 
   showShellView("report-view");
   initTabs();
@@ -309,6 +373,8 @@ function initReportActions() {
   });
 
   document.getElementById("print-report-btn").addEventListener("click", () => window.print());
+
+  document.getElementById("regenerate-report-btn").addEventListener("click", regenerateReport);
 
   document.getElementById("save-report-btn").addEventListener("click", () => {
     if (!currentPatientId || !currentAssessmentId) return;

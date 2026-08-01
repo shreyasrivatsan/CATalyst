@@ -10,8 +10,9 @@ import { callClaude } from "./client.js";
 /**
  * @param {string} clinicalNarrative
  * @param {{domainScores: any[], composite: number|null}} scores
+ * @param {(textSoFar: string) => void} [onDelta] - called as text streams in
  */
-export async function generateCaregiverReport(clinicalNarrative, scores) {
+export async function generateCaregiverReport(clinicalNarrative, scores, onDelta) {
   const system = "You are helping translate a clinical communication " +
     "assessment summary into a warm, plain-language report for a parent " +
     "or caregiver who is not a clinician. Avoid jargon and acronyms, or " +
@@ -26,6 +27,6 @@ export async function generateCaregiverReport(clinicalNarrative, scores) {
 
   return callClaude(
     [{ role: "user", content: userContent }],
-    { system, maxTokens: 1500 },
+    { system, maxTokens: 1500, onDelta },
   );
 }

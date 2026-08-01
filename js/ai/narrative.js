@@ -36,8 +36,9 @@ function buildResultsSummary(checklist, itemScores, scores) {
  * @param {Record<string,string>} itemScores
  * @param {{domainScores: any[], composite: number|null}} scores
  * @param {string} [notes] - optional free-text clinician notes (no PII)
+ * @param {(textSoFar: string) => void} [onDelta] - called as text streams in
  */
-export async function generateClinicalNarrative(checklist, itemScores, scores, notes) {
+export async function generateClinicalNarrative(checklist, itemScores, scores, notes, onDelta) {
   const resultsSummary = buildResultsSummary(checklist, itemScores, scores);
 
   const system = "You are assisting a speech-language clinician by drafting a " +
@@ -56,6 +57,6 @@ export async function generateClinicalNarrative(checklist, itemScores, scores, n
 
   return callClaude(
     [{ role: "user", content: userContent }],
-    { system, maxTokens: 1500 },
+    { system, maxTokens: 1500, onDelta },
   );
 }
