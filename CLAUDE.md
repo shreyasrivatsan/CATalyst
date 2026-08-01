@@ -1,11 +1,11 @@
-# CAT — Communication Assessment Tool
+# CATalyst — Communication Assessment Tool
 
 ## What this project is
 
-CAT is a digital assessment platform for speech-language clinicians and special
+Catalyst is a digital assessment platform for speech-language clinicians and special
 educators who assess communication behaviors in individuals with disabilities.
 Today that work is manual: paper checklists, hand-calculated scores, and reports
-typed from scratch. CAT digitizes that pipeline and applies generative AI at the
+typed from scratch. Catalyst digitizes that pipeline and applies generative AI at the
 points where clinicians lose the most time — writing narrative reports and
 translating clinical findings for families.
 

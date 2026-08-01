@@ -1,7 +1,7 @@
-# CAT — Communication Assessment Tool
+# CATalyst — Communication Assessment Tool
 
 A digital assessment platform for speech-language clinicians and special
-educators. CAT digitizes the Present/Absent communication checklist,
+educators. Catalyst digitizes the Present/Absent communication checklist,
 computes domain and composite scores automatically, and uses generative AI
 to draft a clinical narrative and a caregiver-friendly version of the same
 report for families.
