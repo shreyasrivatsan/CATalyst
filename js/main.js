@@ -20,6 +20,7 @@ import { generateCaregiverReport } from "./ai/caregiverReport.js";
 import { renderDashboardStats, renderRecentActivity } from "./views/dashboardView.js";
 import { renderPatientsList, renderPatientDetail } from "./views/patientsView.js";
 import { renderReportsList } from "./views/reportsView.js";
+import { renderTrendChart } from "./views/trendChart.js";
 
 const checklist = DEFAULT_CHECKLIST;
 
@@ -143,6 +144,12 @@ function goToPatientDetail(patientId) {
     document.getElementById("patient-detail-scores"),
     document.getElementById("patient-detail-reports"),
     (assessment) => showSavedReport(patient, assessment, "patient-detail-view")
+  );
+
+  renderTrendChart(
+    patient,
+    document.getElementById("patient-trend-chart"),
+    document.getElementById("patient-trend-empty")
   );
 
   showShellView("patient-detail-view");
@@ -434,6 +441,10 @@ function initSidebarNav() {
     if (currentDetailPatientId) startAssessment(currentDetailPatientId);
   });
   document.getElementById("back-to-patients-btn").addEventListener("click", goToPatients);
+
+  document.getElementById("dashboard-new-assessment-btn").addEventListener("click", goToNewAssessment);
+  document.getElementById("dashboard-patients-btn").addEventListener("click", goToPatients);
+  document.getElementById("dashboard-reports-btn").addEventListener("click", goToReports);
 }
 
 // ---------- Settings ----------

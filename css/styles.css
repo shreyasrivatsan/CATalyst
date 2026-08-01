@@ -1,14 +1,18 @@
 :root {
-  --color-bg: #f7f9fb;
+  --color-bg: #f5f6fb;
   --color-surface: #ffffff;
-  --color-text: #1f2937;
+  --color-text: #1e2233;
   --color-muted: #6b7280;
-  --color-primary: #2f7a78;
-  --color-primary-dark: #235c5a;
-  --color-border: #e2e8f0;
+  --color-primary: #4f46e5;
+  --color-primary-dark: #4338ca;
+  --color-primary-light: #eef2ff;
+  --color-border: #e5e7f0;
   --color-error: #b91c1c;
-  --radius: 8px;
+  --color-sidebar-bg: #1e1b3a;
+  --radius: 10px;
   --spacing: 1rem;
+  --shadow-sm: 0 1px 2px rgba(30, 27, 58, 0.06), 0 1px 1px rgba(30, 27, 58, 0.04);
+  --shadow-md: 0 8px 24px rgba(30, 27, 58, 0.08), 0 2px 6px rgba(30, 27, 58, 0.05);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -24,7 +28,7 @@ body {
 }
 
 .app-header {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: #ffffff;
   padding: 1.5rem var(--spacing);
   text-align: center;
@@ -34,7 +38,8 @@ body {
 .app-header h1 {
   margin: 0;
   font-size: 1.75rem;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .app-subtitle {
@@ -61,6 +66,7 @@ body {
   border-radius: var(--radius);
   padding: 1.5rem;
   margin-bottom: var(--spacing);
+  box-shadow: var(--shadow-md);
 }
 
 .app-section h2 {
@@ -79,7 +85,7 @@ body {
   width: 240px;
   flex-shrink: 0;
   min-height: 100vh;
-  background: var(--color-primary);
+  background: var(--color-sidebar-bg);
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -89,13 +95,14 @@ body {
 .sidebar-brand h1 {
   margin: 0;
   font-size: 1.4rem;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .sidebar-brand .app-subtitle {
   margin: 0.15rem 0 1.5rem;
   font-size: 0.8rem;
-  opacity: 0.85;
+  opacity: 0.75;
 }
 
 .sidebar-nav {
@@ -110,18 +117,29 @@ body {
   text-align: left;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.85);
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.75);
   padding: 0.65rem 0.75rem;
   border-radius: var(--radius);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-icon {
+  flex-shrink: 0;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  border-left-color: #818cf8;
   color: #ffffff;
   font-weight: 600;
 }
@@ -153,10 +171,26 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 1.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 .view h2 {
   margin-top: 0;
+}
+
+.view h3 {
+  color: var(--color-text);
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* Dashboard quick actions */
+
+.quick-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
 @media (max-width: 700px) {
@@ -209,6 +243,13 @@ body {
   border-radius: var(--radius);
   padding: 1.25rem;
   text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-value {
@@ -236,6 +277,12 @@ body {
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.activity-row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .patient-row-actions {
@@ -245,6 +292,19 @@ body {
 
 .composite-note {
   font-weight: 600;
+}
+
+/* Trend chart */
+
+#patient-trend-chart-wrap {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 700px;
+  height: 260px;
+  position: relative;
 }
 
 .placeholder-note {
@@ -290,19 +350,24 @@ textarea {
 
 .btn {
   font: inherit;
+  font-weight: 600;
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius);
   border: 1px solid transparent;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primary {
   background: var(--color-primary);
   color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
   background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-secondary {
@@ -312,7 +377,9 @@ textarea {
 }
 
 .btn-secondary:hover {
-  background: var(--color-bg);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
 .btn-header {
@@ -337,6 +404,12 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   margin-bottom: 0.5rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.patient-row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .patient-row-info strong {
