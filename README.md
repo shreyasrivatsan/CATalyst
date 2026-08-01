@@ -50,18 +50,36 @@ page. Stop it anytime with `Control+C` in that window.
 
 ## API key
 
-AI features call the Anthropic API directly from the browser. The key is
-never hardcoded or committed to this repo.
+The key is never hardcoded or committed to this repo, in either mode below.
 
-To use the AI features: click **Settings** in the header, paste your
-Anthropic API key, and click **Save**. The key is held only in this
-browser tab's `sessionStorage` — it is never written to disk and is
-cleared when the tab closes or when you click **Clear**.
+**On the deployed Netlify site**, AI features work with no key entry at all.
+A Netlify serverless function (`netlify/functions/claude.js`) holds the real
+Anthropic API key server-side, read from a Netlify environment variable
+(`ANTHROPIC_API_KEY`, set in the Netlify dashboard — see Deployment below).
+The browser calls that function instead of calling Anthropic directly, so
+the real key never reaches the browser.
+
+**When running locally** with the plain `python3 -m http.server` setup above,
+that serverless function isn't available, so the app falls back to a
+manually entered key: click **Settings** in the header, paste your Anthropic
+API key, and click **Save**. The key is held only in that browser tab's
+`sessionStorage` — never written to disk — and is cleared when the tab
+closes or when you click **Clear**.
 
 ## Deployment
 
-Deployed as a static site (Netlify). Deployment steps will be added here
-once the app is ready to publish.
+Deployed as a static site on Netlify, connected to this GitHub repo — every
+push to `main` auto-redeploys.
+
+- **Build command**: none
+- **Publish directory**: `.` (repo root)
+- **Functions directory**: `netlify/functions` (declared in `netlify.toml`)
+
+One manual, one-time setup step in the Netlify dashboard: go to **Site
+settings → Environment variables** and add `ANTHROPIC_API_KEY` with a real
+Anthropic API key as the value. This is never stored in the repo — only in
+Netlify's environment variable store — and is what powers the AI features on
+the live site with no key entry required from visitors.
 
 ## License
 
