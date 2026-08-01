@@ -1,8 +1,14 @@
-// Entry point for the CAT app. Wires together patient selection, the
-// checklist, scoring, and the report screens.
+// Entry point for the CATalyst app. Wires together sign-in, the sidebar
+// shell, patient management, the checklist, scoring, and reports.
 
 import { getCurrentUser, login } from "./auth/auth.js";
-import { listPatients, getPatient, createPatient, saveAssessment } from "./store/patientStore.js";
+import {
+  listPatients,
+  getPatient,
+  createPatient,
+  saveAssessment,
+  listAssessments,
+} from "./store/patientStore.js";
 import { DEFAULT_CHECKLIST } from "./data/checklist.js";
 import { VIDEO_MAP } from "./data/videoMap.js";
 import { computeScores } from "./scoring.js";
@@ -11,6 +17,9 @@ import { renderScoresTable, initTabs } from "./report.js";
 import { getApiKey, setApiKey, clearApiKey } from "./settings.js";
 import { generateClinicalNarrative } from "./ai/narrative.js";
 import { generateCaregiverReport } from "./ai/caregiverReport.js";
+import { renderDashboardStats, renderRecentActivity } from "./views/dashboardView.js";
+import { renderPatientsList, renderPatientDetail } from "./views/patientsView.js";
+import { renderReportsList } from "./views/reportsView.js";
 
 const checklist = DEFAULT_CHECKLIST;
 
@@ -19,14 +28,34 @@ let currentPatientId = null;
 let currentAssessmentId = null;
 let itemScores = {};
 
-// Which section was visible before the user opened Settings, so "Back" can
-// return them there without disturbing in-progress work.
-let sectionBeforeSettings = "login-section";
+// Which patient is showing in Patient Detail, so its "Start new assessment"
+// button knows who to start for.
+let currentDetailPatientId = null;
 
-function showSection(sectionId) {
-  document.querySelectorAll(".app-section").forEach((section) => {
-    section.hidden = section.id !== sectionId;
+// Which shell view to return to when the report screen's "Back" is clicked
+// — depends on how the user got there (fresh generation vs. reopening a
+// saved report from Patient Detail or Clinical Reports).
+let reportBackTarget = "checklist-view";
+
+// Which shell view to return to when Settings' "Back" is clicked.
+let viewBeforeSettings = "dashboard-view";
+
+// ---------- Shell navigation ----------
+
+function showShellView(viewId) {
+  document.querySelectorAll(".view").forEach((view) => {
+    view.hidden = view.id !== viewId;
   });
+  document.querySelectorAll(".nav-item").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === viewId);
+  });
+}
+
+function enterApp() {
+  document.getElementById("login-wrapper").hidden = true;
+  document.getElementById("app-shell").hidden = false;
+  document.getElementById("signed-in-as").textContent = `Signed in as ${getCurrentUser()}`;
+  goToDashboard();
 }
 
 function generateId() {
@@ -46,68 +75,88 @@ function initLogin() {
     const name = nameInput.value.trim();
     if (!name) return;
     login(name);
-    showPatientList();
+    enterApp();
   });
 
-  const existingUser = getCurrentUser();
-  if (existingUser) {
-    showPatientList();
-  } else {
-    showSection("login-section");
+  if (getCurrentUser()) {
+    enterApp();
   }
 }
 
-// ---------- Patient list ----------
+// ---------- Dashboard ----------
 
-function showPatientList() {
-  renderPatientList();
-  const signedInAs = document.getElementById("signed-in-as");
-  const user = getCurrentUser();
-  signedInAs.textContent = user ? `Signed in as ${user}` : "";
-  showSection("patient-section");
+function goToDashboard() {
+  const clinician = getCurrentUser();
+  const patients = listPatients(clinician);
+  const assessments = listAssessments(clinician);
+
+  const weekAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentCount = assessments.filter((a) => new Date(a.date).getTime() >= weekAgoMs).length;
+
+  const scored = assessments.filter(
+    (a) => a.scores?.composite !== null && a.scores?.composite !== undefined
+  );
+  const avgComposite = scored.length
+    ? Math.round(scored.reduce((sum, a) => sum + a.scores.composite, 0) / scored.length)
+    : null;
+
+  renderDashboardStats(
+    {
+      totalPatients: patients.length,
+      totalAssessments: assessments.length,
+      recentCount,
+      avgComposite,
+    },
+    document.getElementById("dashboard-stats")
+  );
+
+  renderRecentActivity(assessments, document.getElementById("dashboard-recent"), (patientId) => {
+    goToPatientDetail(patientId);
+  });
+
+  showShellView("dashboard-view");
 }
 
-function renderPatientList() {
-  const container = document.getElementById("patient-list");
-  container.textContent = "";
+// ---------- Patients ----------
 
+function goToPatients() {
   const patients = listPatients(getCurrentUser());
-  if (patients.length === 0) {
-    const note = document.createElement("p");
-    note.className = "placeholder-note";
-    note.textContent = "No patients yet. Create one below to get started.";
-    container.appendChild(note);
+  renderPatientsList(patients, document.getElementById("patients-list"), {
+    onView: (id) => goToPatientDetail(id),
+    onStartAssessment: (id) => startAssessment(id),
+  });
+  showShellView("patients-view");
+}
+
+function goToPatientDetail(patientId) {
+  const patient = getPatient(patientId);
+  if (!patient) {
+    goToPatients();
     return;
   }
+  currentDetailPatientId = patientId;
 
-  patients.forEach((patient) => {
-    const row = document.createElement("div");
-    row.className = "patient-row";
+  document.getElementById("patient-detail-name").textContent = patient.name;
+  renderPatientDetail(
+    patient,
+    document.getElementById("patient-detail-meta"),
+    document.getElementById("patient-detail-scores"),
+    document.getElementById("patient-detail-reports"),
+    (assessment) => showSavedReport(patient, assessment, "patient-detail-view")
+  );
 
-    const info = document.createElement("div");
-    info.className = "patient-row-info";
+  showShellView("patient-detail-view");
+}
 
-    const name = document.createElement("strong");
-    name.textContent = patient.name;
-    info.appendChild(name);
+// ---------- New Assessment ----------
 
-    const meta = document.createElement("div");
-    meta.className = "patient-row-meta";
-    const assessmentCount = patient.assessments.length;
-    meta.textContent = `${assessmentCount} assessment${assessmentCount === 1 ? "" : "s"}`;
-    info.appendChild(meta);
-
-    row.appendChild(info);
-
-    const startBtn = document.createElement("button");
-    startBtn.className = "btn btn-primary";
-    startBtn.type = "button";
-    startBtn.textContent = "Start assessment";
-    startBtn.addEventListener("click", () => startAssessment(patient.id));
-    row.appendChild(startBtn);
-
-    container.appendChild(row);
+function goToNewAssessment() {
+  const patients = listPatients(getCurrentUser());
+  renderPatientsList(patients, document.getElementById("new-assessment-existing-list"), {
+    onView: (id) => goToPatientDetail(id),
+    onStartAssessment: (id) => startAssessment(id),
   });
+  showShellView("new-assessment-view");
 }
 
 function initNewPatientForm() {
@@ -152,7 +201,7 @@ function startAssessment(patientId) {
 
   document.getElementById("clinician-notes-input").value = "";
   renderChecklistScreen(patient);
-  showSection("checklist-section");
+  showShellView("checklist-view");
 }
 
 function renderChecklistScreen(patient) {
@@ -194,11 +243,13 @@ function persistAssessment() {
 async function generateReport() {
   const loadingEl = document.getElementById("report-loading");
   const errorEl = document.getElementById("report-error");
+  const saveStatusEl = document.getElementById("report-save-status");
   const clinicalTextarea = document.getElementById("clinical-narrative-text");
   const caregiverTextarea = document.getElementById("caregiver-narrative-text");
 
   errorEl.hidden = true;
   errorEl.textContent = "";
+  saveStatusEl.hidden = true;
   clinicalTextarea.value = "";
   caregiverTextarea.value = "";
 
@@ -206,7 +257,8 @@ async function generateReport() {
   const scores = assessment.scores;
 
   renderScoresTable(scores, document.getElementById("report-scores-table"));
-  showSection("report-section");
+  reportBackTarget = "checklist-view";
+  showShellView("report-view");
   initTabs();
 
   loadingEl.hidden = false;
@@ -218,6 +270,13 @@ async function generateReport() {
 
     const caregiverReport = await generateCaregiverReport(clinicalNarrative, scores);
     caregiverTextarea.value = caregiverReport;
+
+    // Persist the generated report onto the assessment record so it can be
+    // reopened later from Patient Detail or Clinical Reports.
+    assessment.clinicalNarrative = clinicalNarrative;
+    assessment.caregiverNarrative = caregiverReport;
+    assessment.reportGeneratedAt = new Date().toISOString();
+    saveAssessment(currentPatientId, assessment);
   } catch (err) {
     console.error(err);
     errorEl.textContent = err.message || "Something went wrong generating the report.";
@@ -225,6 +284,80 @@ async function generateReport() {
   } finally {
     loadingEl.hidden = true;
   }
+}
+
+function showSavedReport(patient, assessment, backTarget) {
+  currentPatientId = patient.id;
+  currentAssessmentId = assessment.id;
+  reportBackTarget = backTarget;
+
+  document.getElementById("report-error").hidden = true;
+  document.getElementById("report-loading").hidden = true;
+  document.getElementById("report-save-status").hidden = true;
+
+  renderScoresTable(assessment.scores, document.getElementById("report-scores-table"));
+  document.getElementById("clinical-narrative-text").value = assessment.clinicalNarrative || "";
+  document.getElementById("caregiver-narrative-text").value = assessment.caregiverNarrative || "";
+
+  showShellView("report-view");
+  initTabs();
+}
+
+function initReportActions() {
+  document.getElementById("report-back-btn").addEventListener("click", () => {
+    showShellView(reportBackTarget);
+  });
+
+  document.getElementById("print-report-btn").addEventListener("click", () => window.print());
+
+  document.getElementById("save-report-btn").addEventListener("click", () => {
+    if (!currentPatientId || !currentAssessmentId) return;
+    const patient = getPatient(currentPatientId);
+    const assessment = patient?.assessments.find((a) => a.id === currentAssessmentId);
+    if (!assessment) return;
+
+    assessment.clinicalNarrative = document.getElementById("clinical-narrative-text").value;
+    assessment.caregiverNarrative = document.getElementById("caregiver-narrative-text").value;
+    saveAssessment(currentPatientId, assessment);
+
+    const statusEl = document.getElementById("report-save-status");
+    statusEl.hidden = false;
+    setTimeout(() => {
+      statusEl.hidden = true;
+    }, 2000);
+  });
+}
+
+// ---------- Clinical Reports ----------
+
+function goToReports() {
+  const assessments = listAssessments(getCurrentUser()).filter((a) => a.clinicalNarrative);
+  renderReportsList(assessments, document.getElementById("reports-list"), (assessment) => {
+    const patient = getPatient(assessment.patientId);
+    if (!patient) return;
+    showSavedReport(patient, assessment, "reports-view");
+  });
+  showShellView("reports-view");
+}
+
+// ---------- Sidebar navigation ----------
+
+function initSidebarNav() {
+  document.querySelectorAll(".nav-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.dataset.view;
+      if (view === "dashboard-view") goToDashboard();
+      else if (view === "patients-view") goToPatients();
+      else if (view === "new-assessment-view") goToNewAssessment();
+      else if (view === "reports-view") goToReports();
+    });
+  });
+
+  document.getElementById("back-to-patients-list-btn").addEventListener("click", goToPatients);
+  document.getElementById("start-assessment-for-patient-btn").addEventListener("click", () => {
+    if (currentDetailPatientId) startAssessment(currentDetailPatientId);
+  });
+  document.getElementById("back-to-patients-btn").addEventListener("click", goToPatients);
 }
 
 // ---------- Settings ----------
@@ -244,16 +377,16 @@ function initSettingsSection() {
   }
 
   openBtn.addEventListener("click", () => {
-    const currentSection = document.querySelector(".app-section:not([hidden])");
-    if (currentSection) sectionBeforeSettings = currentSection.id;
+    const currentView = document.querySelector("#app-shell .view:not([hidden])");
+    if (currentView) viewBeforeSettings = currentView.id;
 
     input.value = getApiKey();
     refreshStatus();
-    showSection("settings-section");
+    showShellView("settings-view");
   });
 
   closeBtn.addEventListener("click", () => {
-    showSection(sectionBeforeSettings);
+    showShellView(viewBeforeSettings);
   });
 
   saveBtn.addEventListener("click", () => {
@@ -277,13 +410,10 @@ function init() {
   initLogin();
   initNewPatientForm();
   initSettingsSection();
+  initSidebarNav();
+  initReportActions();
 
-  document.getElementById("back-to-patients-btn").addEventListener("click", showPatientList);
-  document.getElementById("back-to-checklist-btn").addEventListener("click", () => {
-    showSection("checklist-section");
-  });
   document.getElementById("generate-report-btn").addEventListener("click", generateReport);
-  document.getElementById("print-report-btn").addEventListener("click", () => window.print());
 }
 
 init();

@@ -45,6 +45,21 @@ export function getPatient(patientId) {
   return readAll().find((p) => p.id === patientId) || null;
 }
 
+// Flattened, most-recent-first list of every assessment across a
+// clinician's patients — used by the Dashboard, Patient Detail, and
+// Clinical Reports screens so they don't each re-implement this.
+export function listAssessments(clinicianName) {
+  return listPatients(clinicianName)
+    .flatMap((patient) =>
+      patient.assessments.map((assessment) => ({
+        ...assessment,
+        patientId: patient.id,
+        patientName: patient.name,
+      }))
+    )
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
 export function createPatient({ name, dob, caregiver, clinicianName }) {
   const patients = readAll();
   const patient = {

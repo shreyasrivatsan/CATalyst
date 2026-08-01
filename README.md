@@ -21,6 +21,9 @@ Work in progress — this README is updated as features are built.
 - [x] AI clinical narrative
 - [x] Caregiver-friendly report
 - [x] Formatted report view
+- [x] Clinician dashboard shell (sidebar: Dashboard / Patients / New
+      Assessment / Clinical Reports), patient detail with score history,
+      and persisted/reopenable reports
 
 All P0 items above have a working first pass. The checklist content is a
 generic, SCERTS-structure-inspired sample (not a licensed instrument) —
