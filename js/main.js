@@ -71,7 +71,7 @@ function renderPatientList() {
   const container = document.getElementById("patient-list");
   container.textContent = "";
 
-  const patients = listPatients();
+  const patients = listPatients(getCurrentUser());
   if (patients.length === 0) {
     const note = document.createElement("p");
     note.className = "placeholder-note";
@@ -127,6 +127,7 @@ function initNewPatientForm() {
     const patient = createPatient({
       name,
       dob,
+      clinicianName: getCurrentUser(),
       caregiver: {
         name: caregiverName,
         relationship: caregiverRelationship,

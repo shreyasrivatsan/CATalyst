@@ -29,20 +29,29 @@ function generateId() {
     : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function listPatients() {
-  return readAll();
+// Patients are scoped to the clinician who created them (matched by the
+// name entered at sign-in — see js/auth/auth.js). This is a name match, not
+// real per-user accounts, so two clinicians must use their name consistently
+// to see their own patients each time. Patients created before this field
+// existed have no owner recorded and won't appear for anyone; see README.
+
+export function listPatients(clinicianName) {
+  const all = readAll();
+  if (!clinicianName) return all;
+  return all.filter((p) => p.clinicianName === clinicianName);
 }
 
 export function getPatient(patientId) {
   return readAll().find((p) => p.id === patientId) || null;
 }
 
-export function createPatient({ name, dob, caregiver }) {
+export function createPatient({ name, dob, caregiver, clinicianName }) {
   const patients = readAll();
   const patient = {
     id: generateId(),
     name,
     dob: dob || "",
+    clinicianName: clinicianName || "",
     caregiver: {
       name: caregiver?.name || "",
       relationship: caregiver?.relationship || "",
