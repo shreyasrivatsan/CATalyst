@@ -225,7 +225,17 @@ function persistAssessment() {
   const notes = document.getElementById("clinician-notes-input").value;
   const scores = computeScores(checklist, itemScores);
 
+  // If this assessment (same id) was already saved before — e.g. the
+  // clinician generated a report, went Back to the checklist, and clicked
+  // Generate again — carry forward any previously generated report fields
+  // instead of wiping them. They'll be replaced a moment later once the AI
+  // call below finishes, but preserving them here closes the gap where a
+  // saved report could otherwise be lost before regeneration completes.
+  const existingPatient = getPatient(currentPatientId);
+  const existingAssessment = existingPatient?.assessments.find((a) => a.id === currentAssessmentId);
+
   const assessment = {
+    ...existingAssessment,
     id: currentAssessmentId,
     checklistId: checklist.id,
     date: new Date().toISOString(),
