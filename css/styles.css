@@ -69,7 +69,7 @@ body {
 
 /* App shell: sidebar + content area, shown after sign-in */
 
-#app-shell {
+#app-shell:not([hidden]) {
   display: flex;
   min-height: 100vh;
   align-items: flex-start;
